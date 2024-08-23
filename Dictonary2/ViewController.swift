@@ -19,6 +19,16 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        fetchCoreData { x in
+            print(x!)
+            if let words = x{
+                for w in words{
+                    print(w.meaning!)
+                    print(w.word!)
+                    self.words.append(w.word!)
+                }
+            }
+        }
         
     }
     
@@ -31,8 +41,9 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 self.WordMeaningDisplayLabel.text = x.definition
                 self.words.append(self.wordTextField.text!)
                 self.wordsTable.reloadData()
+                addCoreData(word: self.wordTextField.text!, meaning: x.definition)
             }
-            //addCoreData(word: self.wordTextField.text!, meaning: x.definition)
+            
             
         }, word: wordTextField.text!)
     }
@@ -90,5 +101,36 @@ func fetchMeaning(completionHandler: @escaping ([Dictonary]) -> Void, word: Stri
 }
 
 
+func addCoreData(word: String, meaning: String) {
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let words = Words(context: context)
+    words.word = word
+    words.meaning = meaning
+    do {
+        try context.save()
+    } catch {
+        print("error-Saving data")
+    }
+}
 
 
+func fetchCoreData(onSuccess: @escaping ([Words]?) -> Void) {
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    do {
+        let items = try context.fetch(Words.fetchRequest()) as? [Words]
+        onSuccess(items)
+    } catch {
+        print("error-Fetching data")
+    }
+}
+
+func deleteCoreData(indexPath: Int, items: [Words]) {
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    let dataToRemove = items[indexPath]
+    context.delete(dataToRemove)
+    do {
+        try context.save()
+    } catch {
+        print("error-Deleting data")
+    }
+}
